@@ -1,0 +1,26 @@
+{
+  "name": "rivyo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rivyo — إدارة والرد على تقييمات Google Maps بالذكاء الاصطناعي. مشروع مستقل تمامًا يعمل على reviews.maaoun.com (نطاق MAAOUN فقط كـ subdomain).",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "keys": "node scripts/generate-keys.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.2",
+    "next": "16.3.7",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5.9.3"
+  }
+}
