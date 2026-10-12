@@ -52,12 +52,11 @@ test("previousAyahTarget: يبدأ من بداية الآية الحالية ث�
   assert.equal(previousAyahTarget(null, 5000), null);
 });
 
-test("estimateTimings: تغطية كاملة للزمن وترتيب تصاعدي ونسبية لأطوال الآيات", () => {
-  const texts = ["قصير", "نصٌّ أطول بكثير من الذي قبله بكثير جدًا وبكثير من الكلمات", "متوسط الطول هنا"];
+test("estimateTimings: تغطية كاملة للزمن وتوزيع متساٍ بين الآيات", () => {
   const durationMs = 60_000;
-  const estimated = estimateTimings(texts, durationMs);
+  const estimated = estimateTimings(4, durationMs);
 
-  assert.equal(estimated.length, 3);
+  assert.equal(estimated.length, 4);
   assert.equal(estimated[0].start, 0);
   assert.equal(estimated[estimated.length - 1].end, durationMs, "النهاية تطابق مدة الملف");
 
@@ -68,14 +67,16 @@ test("estimateTimings: تغطية كاملة للزمن وترتيب تصاعد�
 
   const first = estimated[0].end - estimated[0].start;
   const second = estimated[1].end - estimated[1].start;
-  assert.ok(second > first, "الآية الأطول تأخذ زمنًا أكبر");
-  assert.equal(estimated.map((timing) => timing.ayah).join(","), "1,2,3");
+  assert.equal(first, second, "التوزيع متساٍ بين الآيات");
+  assert.equal(first, 15_000);
+  assert.equal(estimated.map((timing) => timing.ayah).join(","), "1,2,3,4");
 });
 
 test("estimateTimings: حالات حدّية", () => {
-  assert.deepEqual(estimateTimings([], 1000), []);
-  assert.deepEqual(estimateTimings(["آية"], 0), []);
-  const single = estimateTimings(["آية واحدة فقط"], 10_000);
+  assert.deepEqual(estimateTimings(0, 1000), []);
+  assert.deepEqual(estimateTimings(7, 0), []);
+  assert.deepEqual(estimateTimings(-3, 5000), []);
+  const single = estimateTimings(1, 10_000);
   assert.equal(single.length, 1);
   assert.equal(single[0].start, 0);
   assert.equal(single[0].end, 10_000);

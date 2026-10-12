@@ -12,7 +12,6 @@ import { getSurah } from "../data/surahs";
 import { resolveAudioSources } from "./audio-sources";
 import { getLocalAudioUrl } from "./downloads";
 import { ayahAtTime, clamp, estimateTimings, previousAyahTarget, timingForAyah } from "./player-math";
-import { getCachedSurahText, getSurahText } from "./text";
 import {
   DEFAULT_SETTINGS,
   loadLastPosition,
@@ -44,7 +43,6 @@ export interface PlayerApi {
   durationMs: number;
   timings: AyahTiming[] | null;
   timingSource: TimingSource | null;
-  ayahTexts: string[] | null;
   speed: number;
   repeatSurah: boolean;
   repeatAyah: number;
@@ -97,7 +95,6 @@ export function usePlayer(): PlayerApi {
   const [durationMs, setDurationMs] = useState(0);
   const [timings, setTimings] = useState<AyahTiming[] | null>(null);
   const [timingSource, setTimingSource] = useState<TimingSource | null>(null);
-  const [ayahTexts, setAyahTexts] = useState<string[] | null>(null);
   const [settings, setSettings] = useState<AppSettings>(settingsRef.current);
 
   const surahRef = useRef<number | null>(null);
@@ -208,16 +205,7 @@ export function usePlayer(): PlayerApi {
           });
       }
 
-      /* 2) نص السورة (للعرض وتقدير التوقيتات عند الحاجة) */
-      const cachedText = getCachedSurahText(surahNumber);
-      setAyahTexts(cachedText?.ayahs ?? null);
-      if (!cachedText) {
-        void getSurahText(surahNumber).then((text) => {
-          if (sessionRef.current === session && text) setAyahTexts(text.ayahs);
-        });
-      }
-
-      /* 3) تحديد موضع البداية:
+      /* 2) تحديد موضع البداية:
          - إن مُرِّر موضع دقيق (مللي ثانية) فهو الأولوية — عبر resumeAt/متابعة الاستماع
          - وإلا نبدأ من بداية الآية المطلوبة إن كانت توقيتاتها معروفة
          - وإلا ننتظر التوقيتات وننفّذ الطلب بمجرد جهوزيتها */
@@ -340,17 +328,12 @@ export function usePlayer(): PlayerApi {
     setCurrentTimeMs(timing.start);
   }, [timings]);
 
-  /* تقدير التوقيتات عند تعذّر الجلب الرسمي (نسبيًا إلى طول الآيات) */
+  /* تقدير التوقيتات عند تعذّر الجلب الرسمي (توزيع متساٍ على عدد الآيات) */
   useEffect(() => {
-    if (timingSource !== "estimated" || !surah || durationMs <= 0) return;
-    let cancelled = false;
-    void getSurahText(surah).then((text) => {
-      if (cancelled || !text) return;
-      setTimings(estimateTimings(text.ayahs, durationMs));
-    });
-    return () => {
-      cancelled = true;
-    };
+    if (timingSource !== "estimated" || surah == null || durationMs <= 0) return;
+    const meta = getSurah(surah);
+    if (!meta) return;
+    setTimings(estimateTimings(meta.ayahCount, durationMs));
   }, [timingSource, surah, durationMs]);
 
   /* الحفظ عند مغادرة الصفحة أو تصغير التطبيق */
@@ -595,7 +578,6 @@ export function usePlayer(): PlayerApi {
     durationMs,
     timings,
     timingSource,
-    ayahTexts,
     speed: settings.speed ?? DEFAULT_SETTINGS.speed,
     repeatSurah: settings.repeatSurah,
     repeatAyah: settings.repeatAyah,

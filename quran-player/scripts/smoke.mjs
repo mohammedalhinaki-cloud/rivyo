@@ -52,6 +52,7 @@ expect("رقم الآية المحفوظة يظهر", home.includes("الآية 
 expect("زر المتابعة من الثانية نفسها", home.includes("متابعة من الثانية نفسها"));
 expect("تصنيف مكية يظهر", home.includes("مكية"));
 expect("عدّاد الآيات 6236 موجود", home.includes("6236"));
+expect("لا يوجد نص مصحف في الرئيسية", !home.includes("ayah-card__text"));
 
 const homePlaying = mod.renderHomeNowPlaying();
 expect("المشغّل المصغّر يظهر أثناء التشغيل", homePlaying.includes("mini-player"));
@@ -61,6 +62,10 @@ const player = mod.renderPlayer();
 expect("شاشة المشغّل تُرسم", player.length > 1000);
 expect("اسم السورة يظهر", player.includes("سورة البقرة"));
 expect("رقم الآية الحالية يظهر", player.includes("الآية 255"));
+expect("بطاقة الآية صوتية بلا نص مصحف", player.includes("ayah-card--audio") && !player.includes("ayah-card__text"));
+expect("توقيت بداية الآية الحالية يظهر", player.includes("تبدأ عند 1:00"));
+expect("زر شبكة اختيار الآيات موجود", player.includes("اختيار آية"));
+expect("لا تظهر البسملة كنص", !player.includes("بِسْمِ"));
 expect("زر الانتقال إلى آية موجود", player.includes("تشغيل من هنا"));
 expect("مدة الملف منسّقة", player.includes("2:00:00"));
 expect("الموضع الحالي منسّق", player.includes("1:03"));

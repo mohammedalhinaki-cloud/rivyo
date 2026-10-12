@@ -39,21 +39,18 @@ export function timingForAyah(timings: AyahTiming[] | null | undefined, ayah: nu
 
 /**
  * تقدير توقيتات الآيات محليًا عند تعذّر جلب الفهرس الرسمي.
- * التوزيع نسبي إلى طول نص كل آية (مع حد أدنى) — أدق بكثير من القسمة بالتساوي.
+ * التطبيق لا يضمّن نص المصحف (صوت فقط)، لذا التوزيع متساٍ بين الآيات
+ * (قسمة مدة الملف على عددها) مع حد أدنى نصف ثانية لكل آية.
  */
-export function estimateTimings(texts: string[], durationMs: number): AyahTiming[] {
-  if (texts.length === 0 || !Number.isFinite(durationMs) || durationMs <= 0) return [];
-  const weights = texts.map((text) => Math.max(text.replace(/\s/g, "").length, 8));
-  const total = weights.reduce((sum, weight) => sum + weight, 0);
+export function estimateTimings(ayahCount: number, durationMs: number): AyahTiming[] {
+  if (!Number.isInteger(ayahCount) || ayahCount <= 0 || !Number.isFinite(durationMs) || durationMs <= 0) return [];
+  const share = durationMs / ayahCount;
   const timings: AyahTiming[] = [];
-  let cursor = 0;
-  texts.forEach((_text, index) => {
-    const share = (weights[index] / total) * durationMs;
-    const start = Math.round(cursor);
-    const end = index === texts.length - 1 ? Math.round(durationMs) : Math.round(cursor + share);
+  for (let index = 0; index < ayahCount; index += 1) {
+    const start = Math.round(index * share);
+    const end = index === ayahCount - 1 ? Math.round(durationMs) : Math.round((index + 1) * share);
     timings.push({ ayah: index + 1, start, end: Math.max(end, start + 500) });
-    cursor += share;
-  });
+  }
   return timings;
 }
 

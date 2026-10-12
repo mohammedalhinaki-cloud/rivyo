@@ -49,7 +49,6 @@ function createFakePlayer(overrides: Partial<PlayerApi> = {}): PlayerApi {
     durationMs: 7_200_000,
     timings: [{ ayah: 255, start: 60_000, end: 70_000 }],
     timingSource: "official",
-    ayahTexts: ["الٓمٓ"],
     speed: 1,
     repeatSurah: false,
     repeatAyah: 0,
