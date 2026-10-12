@@ -10,11 +10,8 @@ on:
     branches:
       - main
       - arena/a43c388b-rivyo
-    paths:
-      - "quran-player/**"
-      - ".github/workflows/android-apk.yml"
-  tags:
-    - "v*"
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version_name:
