@@ -1,0 +1,19 @@
+{
+  "name": "المصحف المرتل — الشيخ محمد برهجي",
+  "short_name": "المصحف المرتل",
+  "description": "الاستماع للقرآن الكريم كاملًا بصوت الشيخ أ.د. محمد برهجي برواية حفص عن عاصم مع توقيتات الآيات الرسمية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070c10",
+  "theme_color": "#070c10",
+  "categories": ["books", "education", "music"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

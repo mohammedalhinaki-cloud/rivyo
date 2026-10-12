@@ -1,0 +1,145 @@
+name: بناء APK
+
+# يبني تطبيق أندرويد (APK) من كود quran-player وينشره كمُخرَج قابل للتنزيل.
+# - عند كل تعديل يمسّ مجلد quran-player على الفرعين main أو فرع العمل الحالي
+# - يدويًا من تبويب Actions مع إمكانية تحديد رقم الإصدار
+# - عند إنشاء وسم (tag) يبدأ بـ v يُرفَع الـ APK كأصل في صفحة الإصدارات (Releases)
+
+on:
+  push:
+    branches:
+      - main
+      - arena/a43c388b-rivyo
+    paths:
+      - "quran-player/**"
+      - ".github/workflows/android-apk.yml"
+  tags:
+    - "v*"
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "اسم الإصدار (مثال: 1.0.1)"
+        required: false
+      version_code:
+        description: "رقم الإصدار (يجب أن يزيد عند كل تحديث)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    name: بناء وتوقيع APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: جلب الكود
+        uses: actions/checkout@v4
+
+      - name: تجهيز Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: quran-player/package-lock.json
+
+      - name: تجهيز Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: تجهيز أدوات أندرويد
+        uses: android-actions/setup-android@v3
+
+      - name: التأكد من منصة SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null 2>&1 || true
+
+      - name: تخزين مؤقت لـ Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('quran-player/android/**/*.gradle', 'quran-player/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: تثبيت الاعتماديات
+        working-directory: quran-player
+        run: npm ci
+
+      - name: اختبارات منطق التوقيتات
+        working-directory: quran-player
+        run: npm test
+
+      - name: فحص الأنواع + بناء نسخة الويب
+        working-directory: quran-player
+        run: npm run build
+
+      - name: مزامنة نسخة الويب مع مشروع أندرويد
+        working-directory: quran-player
+        run: npx cap sync android
+
+      - name: بناء APK (الإصدار الموقّع)
+        working-directory: quran-player
+        env:
+          APP_VERSION_NAME: ${{ github.event.inputs.version_name || '1.0.0' }}
+          APP_VERSION_CODE: ${{ github.event.inputs.version_code || github.run_number }}
+        run: |
+          chmod +x android/gradlew
+          ./android/gradlew -p android assembleRelease --no-daemon --stacktrace
+
+      - name: التحقق من التوقيع وتجهيز الملف
+        working-directory: quran-player
+        id: apk
+        env:
+          APP_VERSION_NAME: ${{ github.event.inputs.version_name || '1.0.0' }}
+        run: |
+          set -euo pipefail
+          APK="$(find android/app/build/outputs/apk/release -name '*.apk' | head -n 1)"
+          test -n "$APK"
+          NAME="quran-player-burhaji-${APP_VERSION_NAME}.apk"
+          cp "$APK" "$GITHUB_WORKSPACE/$NAME"
+          ls -lh "$GITHUB_WORKSPACE/$NAME"
+          echo "apk_name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "apk_path=$GITHUB_WORKSPACE/$NAME" >> "$GITHUB_OUTPUT"
+          APKSIGNER="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -name apksigner | sort -V | tail -n 1)"
+          "$APKSIGNER" verify --print-certs "$APK" | head -20
+
+      - name: رفع الـ APK كمُخرَج للتنزيل
+        uses: actions/upload-artifact@v4
+        with:
+          name: quran-player-apk
+          path: ${{ steps.apk.outputs.apk_path }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: تحديث إصدار «أحدث نسخة» (عند الدفع على فرع)
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view apk-latest >/dev/null 2>&1 \
+            || gh release create apk-latest \
+                 --prerelease \
+                 --title "أحدث نسخة APK (بناء تلقائي)" \
+                 --notes "رابط مباشر لتنزيل أحدث نسخة موقّعة من تطبيق «المصحف المرتل» للشيخ محمد برهجي. تُحدَّث هذه النسخة تلقائيًا مع كل تعديل."
+          gh release upload apk-latest "${{ steps.apk.outputs.apk_path }}" --clobber
+
+      - name: إنشاء إصدار مع الـ APK (عند إنشاء وسم v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "${{ steps.apk.outputs.apk_path }}" \
+            --title "المصحف المرتل — $GITHUB_REF_NAME" \
+            --notes "نسخة أندرويد موقّعة جاهزة للتثبيت (APK)." \
+            || gh release upload "$GITHUB_REF_NAME" "${{ steps.apk.outputs.apk_path }}" --clobber
