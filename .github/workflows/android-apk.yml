@@ -9,7 +9,7 @@ on:
   push:
     branches:
       - main
-      - arena/a43c388b-rivyo
+      - arena/ba3217da-rivyo
     tags:
       - "v*"
   workflow_dispatch:

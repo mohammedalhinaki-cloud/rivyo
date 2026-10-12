@@ -49,7 +49,7 @@
 **رابط التنزيل المباشر (الإصدار 1.0.0):**
 
 ```
-https://github.com/mohammedalhinaki-cloud/rivyo/releases/download/v1.0.0/quran-player-burhaji-1.0.0.apk
+https://github.com/mohammedalhinaki-cloud/rivyo/releases/download/v1.1.0/quran-player-burhaji-1.1.0.apk
 ```
 
 **أحدث نسخة تتحدّث تلقائيًا مع كل تعديل:**
