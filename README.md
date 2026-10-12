@@ -187,7 +187,7 @@ DEPLOYMENT.md                      # النشر على reviews.maaoun.com
 للقرآن الكريم كاملًا بصوت **الشيخ أ.د. محمد برهجي** برواية حفص عن عاصم، مع توقيتات الآيات الرسمية
 من mp3quran، ومتابعة آخر موضع، وتشغيل بالخلفية، وتنزيل السور للعمل دون إنترنت.
 
-- رابط تنزيل الـ APK: <https://github.com/mohammedalhinaki-cloud/rivyo/releases/download/apk-latest/quran-player-burhaji-1.0.0.apk>
+- رابط تنزيل الـ APK (الإصدار 1.0.0): <https://github.com/mohammedalhinaki-cloud/rivyo/releases/download/v1.0.0/quran-player-burhaji-1.0.0.apk>
 - التوثيق الكامل والمصادر والتراخيص: [`quran-player/README.md`](./quran-player/README.md) و [`quran-player/ATTRIBUTION.md`](./quran-player/ATTRIBUTION.md)
 - البناء التلقائي للـ APK: [`.github/workflows/android-apk.yml`](./.github/workflows/android-apk.yml)
 
