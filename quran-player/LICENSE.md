@@ -9,7 +9,7 @@
 
 | المحتوى | الترخيص | المرجع |
 |---|---|---|
-| نص القرآن (رسم عثماني) | CC-BY 3.0 | مشروع تنزيل — https://tanzil.net |
+| بيانات السور الوصفية (بلا نص المصحف) | CC-BY 3.0 | مشروع تنزيل — https://tanzil.net |
 | الخط Amiri Quran | OFL 1.1 | `public/fonts/OFL.txt` |
 | تسجيلات التلاوة | تبقى ملكًا لأصحابها (mp3quran.net والقارئ)، وتُبَث عبر خوادمهم مباشرة | `ATTRIBUTION.md` |
 | حزمة `@muslims-community/quran` | MIT | `LICENSE-npm-package.txt` |

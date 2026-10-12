@@ -1,4 +1,5 @@
 // ملف مُولَّد آليًا بواسطة scripts/build-data.mjs — لا تُحرّره يدويًا.
+// ملاحظة: البيانات وصفية فقط (بلا نص المصحف) — التطبيق صوت فقط.
 import type { SurahMeta } from "../lib/types";
 
 export const SURAHS: SurahMeta[] = [

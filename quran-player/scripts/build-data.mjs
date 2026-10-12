@@ -2,16 +2,17 @@
 /**
  * توليد بيانات التطبيق (يُشغَّل عند تغيير المصدر فقط — المخرجات مُلتزَمة في Git).
  *
- * المصدر: حزمة `@muslims-community/quran` (نص مشروع تنزيل Tanzil — الرسم العثماني،
- * مع ترقيم الجزء/الحزب وعلامات السجدة). الترخيص: CC-BY 3.0 — انظر ATTRIBUTION.md.
+ * المصدر: حزمة `@muslims-community/quran` (بيانات مشروع تنزيل Tanzil).
+ * نأخذ منها **البيانات الوصفية فقط** (أسماء السور، النطق، عدد الآيات، مكية/مدنية،
+ * بداية الجزء، مواضع السجدة) — أما نص المصحف فلا يُضمَّن في التطبيق إطلاقًا
+ * (قرار منتج: التطبيق صوت فقط).
  *
  * المخرجات:
- *   - src/data/surahs.ts            → بيانات السور الـ114 (الاسم، النطق، العدد، مكية/مدنية)
- *   - public/quran-text/NNN.json    → نص كل سورة (آيات + جزء + سجدة + البسملة)
+ *   - src/data/surahs.ts  → بيانات السور الـ114
  *
  * الاستخدام: npm run data
  */
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,7 +37,7 @@ function resolveSource() {
       /* جرّب التالي */
     }
   }
-  throw new Error("لم أجد ملف بيانات القرآن داخل @muslims-community/quran");
+  throw new Error("لم أجد ملف بيانات السور داخل @muslims-community/quran");
 }
 
 const data = JSON.parse(readFileSync(resolveSource(), "utf8"));
@@ -45,57 +46,25 @@ if (!Array.isArray(data.surahs) || data.surahs.length !== 114) {
   throw new Error("بيانات السور غير صحيحة");
 }
 
-const textDir = join(root, "public", "quran-text");
-rmSync(textDir, { recursive: true, force: true });
-mkdirSync(textDir, { recursive: true });
-
-/** إزالة التشكيل للمقارنات فقط. */
-const strip = (s) =>
-  s
-    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "")
-    .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
-    .replace(/\u0649/g, "\u064A")
-    .replace(/\u0629/g, "\u0647");
-
-const checks = [
-  [1, 1, "بسم الله الرحمن الرحيم"],
-  [2, 1, "الم"],
-  [2, 255, "الله لا اله الا هو الحي القيوم"],
-  [9, 1, "براءه من الله ورسوله"],
-  [18, 50, "واذ قلنا للملئكه اسجدوا"],
-  [112, 1, "قل هو الله احد"],
-  [114, 6, "من الجنه والناس"],
-];
-
 const meta = [];
 let totalAyahs = 0;
 let totalSajdah = 0;
 
 for (const surah of data.surahs) {
-  const ayahs = [];
-  const juz = [];
-  const sajdah = [];
-  let bismillah = null;
+  let juzStart = 1;
+  let sajdahCount = 0;
 
   surah.ayat.forEach((ayah, index) => {
-    if (index === 0 && typeof ayah.bismillah === "string") bismillah = ayah.bismillah;
-    ayahs.push(ayah.text);
-    juz.push(ayah.juz ?? 1);
-    if (ayah.sajdah) sajdah.push(ayah.id);
+    if (index === 0 && typeof ayah.juz === "number") juzStart = ayah.juz;
+    if (ayah.sajdah) sajdahCount += 1;
   });
 
-  if (ayahs.length !== surah.numberOfAyahs) {
-    throw new Error(`عدم تطابق عدد الآيات في السورة ${surah.id}: ${ayahs.length} ≠ ${surah.numberOfAyahs}`);
+  if (surah.ayat.length !== surah.numberOfAyahs) {
+    throw new Error(`عدم تطابق عدد الآيات في السورة ${surah.id}: ${surah.ayat.length} ≠ ${surah.numberOfAyahs}`);
   }
 
-  totalAyahs += ayahs.length;
-  totalSajdah += sajdah.length;
-
-  writeFileSync(
-    join(textDir, `${String(surah.id).padStart(3, "0")}.json`),
-    JSON.stringify({ surah: surah.id, bismillah, ayahs, juz, sajdah }),
-    "utf8",
-  );
+  totalAyahs += surah.ayat.length;
+  totalSajdah += sajdahCount;
 
   meta.push({
     number: surah.id,
@@ -105,23 +74,19 @@ for (const surah of data.surahs) {
     ayahCount: surah.numberOfAyahs,
     place: String(surah.revelationType).toLowerCase() === "medinan" ? "medinan" : "meccan",
     revelationOrder: surah.revelationOrder ?? 0,
-    juzStart: juz[0] ?? 1,
-    sajdahCount: sajdah.length,
+    juzStart,
+    sajdahCount,
   });
 }
 
 if (totalAyahs !== 6236) throw new Error(`مجموع الآيات غير صحيح: ${totalAyahs}`);
 if (totalSajdah !== 15) throw new Error(`عدد السجدات غير صحيح: ${totalSajdah}`);
-
-for (const [surahNumber, ayahNumber, expected] of checks) {
-  const file = JSON.parse(readFileSync(join(textDir, `${String(surahNumber).padStart(3, "0")}.json`), "utf8"));
-  const text = strip(file.ayahs[ayahNumber - 1] ?? "");
-  if (!text.includes(expected)) {
-    throw new Error(`فشل التحقق: ${surahNumber}:${ayahNumber} لا تحتوي «${expected}» — وجدنا: ${text}`);
-  }
+if (meta[0].ayahCount !== 7 || meta[1].ayahCount !== 286 || meta[113].ayahCount !== 6) {
+  throw new Error("أعداد آيات الفاتحة/البقرة/الناس غير مطابقة للمتوقع");
 }
 
 const ts = `// ملف مُولَّد آليًا بواسطة scripts/build-data.mjs — لا تُحرّره يدويًا.
+// ملاحظة: البيانات وصفية فقط (بلا نص المصحف) — التطبيق صوت فقط.
 import type { SurahMeta } from "../lib/types";
 
 export const SURAHS: SurahMeta[] = ${JSON.stringify(meta, null, 2)} as SurahMeta[];
@@ -145,4 +110,4 @@ export function surahLabel(number: number | null | undefined): string {
 `;
 
 writeFileSync(join(root, "src", "data", "surahs.ts"), ts, "utf8");
-console.log(`✅ تم توليد ${meta.length} سورة و ${totalAyahs} آية و ${totalSajdah} سجدة.`);
+console.log(`✅ تم توليد بيانات ${meta.length} سورة (${totalAyahs} آية، ${totalSajdah} سجدة) — بلا نص المصحف.`);

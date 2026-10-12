@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSurah } from "../data/surahs";
 import { RECITER } from "../lib/audio-sources";
 import { formatDuration } from "../lib/format";
-import { getSurahText, type SurahText } from "../lib/text";
+import { timingForAyah } from "../lib/player-math";
 import type { PlayerApi } from "../lib/usePlayer";
 import { DownloadButton } from "./DownloadButton";
 import {
@@ -37,8 +37,7 @@ const REPEAT_AYAH_OPTIONS: Array<{ value: number; label: string }> = [
 
 export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScreenProps) {
   const surah = getSurah(surahNumber);
-  const [text, setText] = useState<SurahText | null>(null);
-  const [showAyahList, setShowAyahList] = useState(false);
+  const [showAyahGrid, setShowAyahGrid] = useState(false);
   const [ayahInput, setAyahInput] = useState("");
   const [dragValue, setDragValue] = useState<number | null>(null);
 
@@ -49,26 +48,12 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
     if (activeSurah !== surahNumber) playSurah(surahNumber);
   }, [activeSurah, surahNumber, playSurah]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setText(null);
-    void getSurahText(surahNumber).then((result) => {
-      if (!cancelled) setText(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [surahNumber]);
-
   const ayahCount = surah?.ayahCount ?? 0;
   const currentAyah = player.currentAyah;
-  const currentText = useMemo(() => {
-    if (!text) return null;
-    const index = (currentAyah ?? 1) - 1;
-    return text.ayahs[index] ?? null;
-  }, [text, currentAyah]);
-
-  const isSajdah = Boolean(text && currentAyah && text.sajdah.includes(currentAyah));
+  const currentTiming = useMemo(
+    () => (currentAyah != null ? timingForAyah(player.timings, currentAyah) : null),
+    [currentAyah, player.timings],
+  );
   const progressValue = dragValue ?? Math.round(player.currentTimeMs);
   const duration = Math.max(player.durationMs, 1);
 
@@ -85,7 +70,7 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
     if (!Number.isInteger(parsed) || parsed < 1 || parsed > ayahCount) return;
     player.playFromAyah(surahNumber, parsed);
     setAyahInput("");
-    setShowAyahList(false);
+    setShowAyahGrid(false);
   }, [ayahCount, ayahInput, player, surahNumber]);
 
   if (!surah) {
@@ -138,8 +123,8 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
         <div className="banner banner--warn">
           <AlertIcon width={17} height={17} />
           <span>
-            تعذّر جلب فهرس التوقيتات الرسمي لهذه السورة — الانتقال بين الآيات الآن <strong>تقديري</strong> (نسبي إلى
-            طول الآيات)، والتشغيل نفسه سليم.
+            تعذّر جلب فهرس التوقيتات الرسمي لهذه السورة — الانتقال بين الآيات الآن <strong>تقديري</strong> (توزيع متساٍ
+            على عدد الآيات)، والتشغيل نفسه سليم.
           </span>
         </div>
       )}
@@ -151,24 +136,24 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
         </div>
       )}
 
-      <section className="ayah-card">
+      <section className="ayah-card ayah-card--audio">
         <div className="ayah-card__head">
           <span className="chip chip--accent">
             الآية {currentAyah ?? "—"} من {surah.ayahCount}
           </span>
-          {isSajdah && <span className="chip chip--gold">موضع سجدة</span>}
           {player.isBuffering && <span className="chip chip--muted">جارٍ التحميل…</span>}
         </div>
-        {currentText ? (
-          <p className="ayah-card__text" dir="rtl">
-            {currentText}
-          </p>
-        ) : (
-          <p className="ayah-card__text ayah-card__text--loading">جارٍ تحميل نص السورة…</p>
-        )}
-        {text?.bismillah && currentAyah === 1 && (
-          <p className="ayah-card__bismillah">{text.bismillah}</p>
-        )}
+        <div className="ayah-card__number" aria-hidden="true">
+          {currentAyah ?? "•"}
+        </div>
+        <p className="ayah-card__meta">
+          {currentTiming
+            ? `تبدأ عند ${formatDuration(currentTiming.start)} وتنتهي عند ${formatDuration(currentTiming.end)}`
+            : "بانتظار توقيتات الآيات…"}
+        </p>
+        <p className="ayah-card__hint muted small">
+          التطبيق صوت فقط — اختر أي آية من الأسفل أو من شبكة الأرقام وسيبدأ التشغيل من بدايتها تمامًا.
+        </p>
       </section>
 
       <div className="progress-block">
@@ -221,8 +206,8 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
         <button type="button" className="chip chip--button" onClick={() => player.seekBy(10000)}>
           + ١٠ ثوانٍ
         </button>
-        <button type="button" className="chip chip--button" onClick={() => setShowAyahList(true)}>
-          <ListIcon width={16} height={16} /> قائمة الآيات
+        <button type="button" className="chip chip--button" onClick={() => setShowAyahGrid(true)}>
+          <ListIcon width={16} height={16} /> اختيار آية
         </button>
         <button type="button" className="chip chip--button" onClick={player.restartSurah}>
           <RepeatIcon width={16} height={16} /> من البداية
@@ -248,9 +233,7 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
             <PlayIcon width={17} height={17} /> تشغيل من هنا
           </button>
         </div>
-        <p className="muted small">
-          يبدأ التشغيل من بداية الآية المطلوبة تمامًا اعتمادًا على التوقيتات الرسمية.
-        </p>
+        <p className="muted small">يبدأ التشغيل من بداية الآية المطلوبة تمامًا اعتمادًا على التوقيتات الرسمية.</p>
       </section>
 
       <section className="card settings-card">
@@ -310,80 +293,68 @@ export default function PlayerScreen({ surahNumber, player, onBack }: PlayerScre
         {player.timingSource === "estimated" ? " · التوقيتات تقديرية" : ""}
       </p>
 
-      {showAyahList && text && (
-        <AyahSheet
+      {showAyahGrid && (
+        <AyahGridSheet
           surahName={surah.name}
-          text={text}
+          ayahCount={ayahCount}
           currentAyah={currentAyah}
           onSelect={(ayah) => {
             player.playFromAyah(surahNumber, ayah);
-            setShowAyahList(false);
+            setShowAyahGrid(false);
           }}
-          onClose={() => setShowAyahList(false)}
+          onClose={() => setShowAyahGrid(false)}
         />
       )}
     </div>
   );
 }
 
-interface AyahSheetProps {
+interface AyahGridSheetProps {
   surahName: string;
-  text: SurahText;
+  ayahCount: number;
   currentAyah: number | null;
   onSelect: (ayah: number) => void;
   onClose: () => void;
 }
 
-const AyahRow = memo(function AyahRow({
-  ayah,
-  content,
-  isCurrent,
+/** شبكة أرقام الآيات (بلا نص) — اختيار سريع بأي إصبع. */
+const AyahGridSheet = memo(function AyahGridSheet({
+  surahName,
+  ayahCount,
+  currentAyah,
   onSelect,
-}: {
-  ayah: number;
-  content: string;
-  isCurrent: boolean;
-  onSelect: (ayah: number) => void;
-}) {
-  return (
-    <li>
-      <button type="button" className={`ayah-row${isCurrent ? " is-current" : ""}`} onClick={() => onSelect(ayah)}>
-        <span className="ayah-row__number">{ayah}</span>
-        <span className="ayah-row__text">{content}</span>
-      </button>
-    </li>
-  );
-});
-
-const AyahSheet = memo(function AyahSheet({ surahName, text, currentAyah, onSelect, onClose }: AyahSheetProps) {
+  onClose,
+}: AyahGridSheetProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const numbers = useMemo(() => Array.from({ length: ayahCount }, (_v, index) => index + 1), [ayahCount]);
 
   useEffect(() => {
-    const node = containerRef.current?.querySelector<HTMLElement>(".ayah-row.is-current");
+    const node = containerRef.current?.querySelector<HTMLElement>(".ayah-grid__cell.is-current");
     node?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [currentAyah]);
 
   return (
-    <div className="sheet sheet--full" role="dialog" aria-modal="true" aria-label={`آيات سورة ${surahName}`}>
+    <div className="sheet sheet--full" role="dialog" aria-modal="true" aria-label={`اختيار آية من سورة ${surahName}`}>
       <div className="sheet__panel" ref={containerRef}>
         <div className="sheet__head">
-          <h2>آيات سورة {surahName}</h2>
+          <h2>اختر آية من سورة {surahName}</h2>
           <button type="button" className="icon-button" onClick={onClose} aria-label="إغلاق">
             <XIcon width={20} height={20} />
           </button>
         </div>
-        {text.bismillah && <p className="bismillah">{text.bismillah}</p>}
-        <ul className="ayah-list">
-          {text.ayahs.map((content, index) => (
-            <AyahRow
-              key={index}
-              ayah={index + 1}
-              content={content}
-              isCurrent={currentAyah === index + 1}
-              onSelect={onSelect}
-            />
+        <div className="ayah-grid">
+          {numbers.map((ayah) => (
+            <button
+              key={ayah}
+              type="button"
+              className={`ayah-grid__cell${currentAyah === ayah ? " is-current" : ""}`}
+              onClick={() => onSelect(ayah)}
+              aria-label={`تشغيل من الآية ${ayah}`}
+            >
+              {ayah}
+            </button>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );

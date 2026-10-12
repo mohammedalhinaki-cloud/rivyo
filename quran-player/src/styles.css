@@ -1132,3 +1132,65 @@ p {
     display: none;
   }
 }
+
+/* ------------------------- بطاقة الآية (صوت فقط) ------------------------- */
+
+.ayah-card--audio {
+  text-align: center;
+}
+
+.ayah-card__number {
+  font-family: var(--font-quran, inherit);
+  font-size: clamp(3.2rem, 16vw, 4.6rem);
+  line-height: 1.15;
+  font-weight: 700;
+  background: linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 40%, var(--text)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-block: 6px 2px;
+}
+
+.ayah-card__meta {
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.ayah-card__hint {
+  margin-block-start: 6px;
+}
+
+/* ----------------------------- شبكة أرقام الآيات ----------------------------- */
+
+.ayah-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.ayah-grid__cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.ayah-grid__cell:active {
+  transform: scale(0.94);
+}
+
+.ayah-grid__cell.is-current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
