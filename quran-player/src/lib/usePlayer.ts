@@ -217,11 +217,14 @@ export function usePlayer(): PlayerApi {
         });
       }
 
-      /* 3) تحديد موضع البداية */
+      /* 3) تحديد موضع البداية:
+         - إن مُرِّر موضع دقيق (مللي ثانية) فهو الأولوية — عبر resumeAt/متابعة الاستماع
+         - وإلا نبدأ من بداية الآية المطلوبة إن كانت توقيتاتها معروفة
+         - وإلا ننتظر التوقيتات وننفّذ الطلب بمجرد جهوزيتها */
       const targetTiming = options.ayah != null ? timingForAyah(cached, options.ayah) : null;
-      const initialMs = targetTiming ? targetTiming.start : (options.positionMs ?? 0);
+      const initialMs = options.positionMs ?? (targetTiming ? targetTiming.start : 0);
       pendingSeekRef.current = initialMs > 0 ? initialMs : null;
-      pendingAyahRef.current = targetTiming ? null : (options.ayah ?? null);
+      pendingAyahRef.current = options.positionMs != null || targetTiming ? null : (options.ayah ?? null);
       setCurrentTimeMs(initialMs);
       setCurrentAyah(options.ayah ?? (cached ? (ayahAtTime(cached, initialMs) ?? 1) : null));
       setDurationMs(0);
@@ -232,8 +235,10 @@ export function usePlayer(): PlayerApi {
       sourcesRef.current = sources;
       sourceIndexRef.current = 0;
       audio.src = sources[0];
-      audio.playbackRate = settingsRef.current.speed;
       audio.load();
+      // ملاحظة: load() يعيد playbackRate إلى defaultPlaybackRate، لذا نضبطهما بعده
+      audio.defaultPlaybackRate = settingsRef.current.speed;
+      audio.playbackRate = settingsRef.current.speed;
       if (options.autoplay) {
         void audio.play().catch(() => {
           if (sessionRef.current !== session) return;
@@ -550,7 +555,10 @@ export function usePlayer(): PlayerApi {
     (speed: number) => {
       updateSettings({ speed });
       const audio = audioRef.current;
-      if (audio) audio.playbackRate = speed;
+      if (audio) {
+        audio.defaultPlaybackRate = speed;
+        audio.playbackRate = speed;
+      }
     },
     [updateSettings],
   );

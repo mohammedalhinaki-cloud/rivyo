@@ -11,6 +11,7 @@ import {
   CheckIcon,
   ClockIcon,
   LayersIcon,
+  ListIcon,
   MoonIcon,
   PauseIcon,
   PlayIcon,
@@ -133,6 +134,37 @@ export default function HomeScreen({
           </button>
         </div>
       </header>
+
+      <section className="hero">
+        <div className="hero__glow" aria-hidden="true" />
+        <div className="hero__body">
+          <span className="chip chip--gold">المصحف المرتل — كامل الـ114 سورة</span>
+          <h1 className="hero__title">الشيخ أ.د. محمد برهجي</h1>
+          <p className="hero__sub">رواية حفص عن عاصم · مرتل · توقيتات الآيات الرسمية من mp3quran</p>
+          <div className="hero__stats">
+            <span>
+              <strong>114</strong> سورة
+            </span>
+            <span>
+              <strong>6236</strong> آية
+            </span>
+            <span>
+              <strong>15</strong> سجدة
+            </span>
+          </div>
+          <div className="row gap">
+            <button type="button" className="button button--primary" onClick={() => onPlaySurah(1)}>
+              <PlayIcon width={18} height={18} /> تشغيل من الفاتحة
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => onOpenSurah(62)}>
+              <ListIcon width={17} height={17} /> سورة الجمعة
+            </button>
+          </div>
+        </div>
+        <span className="hero__ornament" aria-hidden="true">
+          <BookIcon width={64} height={64} />
+        </span>
+      </section>
 
       {resumeSurah && lastPosition && !hiddenResume && (
         <section className="card resume-card">

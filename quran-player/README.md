@@ -43,9 +43,20 @@
 ## الحصول على ملف APK
 
 ### الطريقة 1 — تنزيل جاهز (تلقائي)
-كل تعديل على مجلد `quran-player` يُشغّل بناءً تلقائيًا على GitHub Actions:
-- صفحة الإصدارات: `https://github.com/mohammedalhinaki-cloud/rivyo/releases` → إصدار **«أحدث نسخة APK (بناء تلقائي)»**.
+
+**رابط التنزيل المباشر:**
+
+```
+https://github.com/mohammedalhinaki-cloud/rivyo/releases/download/apk-latest/quran-player-burhaji-1.0.0.apk
+```
+
+(الحجم ≈ 5.5 م.ب — يعمل على أندرويد 7.0 وأحدث، `minSdk 24`)
+
+كل تعديل على مجلد `quran-player` يُشغّل بناءً تلقائيًا على GitHub Actions ويُحدِّث هذا الملف:
+- صفحة الإصدارات: <https://github.com/mohammedalhinaki-cloud/rivyo/releases> → إصدار **«أحدث نسخة APK (بناء تلقائي)»**.
 - أو من تبويب **Actions → بناء APK → Artifacts → quran-player-apk** (يتطلب تسجيل دخول GitHub، ويُحذف بعد 90 يومًا).
+
+عند التثبيت: يطلب أندرويد السماح بالتثبيت من مصدر غير معروف — فعّل الخيار ثم ثبّت.
 
 ### الطريقة 2 — بناء محلي
 ```bash

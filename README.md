@@ -178,3 +178,17 @@ DEPLOYMENT.md                      # النشر على reviews.maaoun.com
 ## النشر
 
 راجع [DEPLOYMENT.md](./DEPLOYMENT.md) — إعداد Vercel + سجل DNS واحد في Cloudflare، منفصل تمامًا عن مشاريع MAAOUN الأخرى.
+
+---
+
+## 📖 مشروع فرعي: تطبيق «المصحف المرتل» (quran-player)
+
+داخل هذا المستودع مجلد مستقل تمامًا عن Rivyo: **`quran-player/`** — تطبيق أندرويد (APK) وويب للاستماع
+للقرآن الكريم كاملًا بصوت **الشيخ أ.د. محمد برهجي** برواية حفص عن عاصم، مع توقيتات الآيات الرسمية
+من mp3quran، ومتابعة آخر موضع، وتشغيل بالخلفية، وتنزيل السور للعمل دون إنترنت.
+
+- رابط تنزيل الـ APK: <https://github.com/mohammedalhinaki-cloud/rivyo/releases/download/apk-latest/quran-player-burhaji-1.0.0.apk>
+- التوثيق الكامل والمصادر والتراخيص: [`quran-player/README.md`](./quran-player/README.md) و [`quran-player/ATTRIBUTION.md`](./quran-player/ATTRIBUTION.md)
+- البناء التلقائي للـ APK: [`.github/workflows/android-apk.yml`](./.github/workflows/android-apk.yml)
+
+> لا يمسّ هذا المجلد أي شيء في مشروع Rivyo (لا اعتماديات مشتركة، ولا متغيرات بيئة، ولا قاعدة بيانات).
