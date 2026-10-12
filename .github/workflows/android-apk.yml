@@ -51,13 +51,19 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: تجهيز أدوات أندرويد
-        uses: android-actions/setup-android@v3
-
-      - name: التأكد من منصة SDK 36
+      - name: التأكد من منصة أندرويد SDK 36
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null 2>&1 || true
+          set -u
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$SDK_ROOT" -type f -name sdkmanager 2>/dev/null | head -n 1)"
+          echo "sdkmanager=$SDKMANAGER"
+          if [ -n "$SDKMANAGER" ] && [ -x "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+            "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" >/dev/null 2>&1 || true
+          fi
+          ls "$SDK_ROOT/platforms" || true
+          ls "$SDK_ROOT/build-tools" || true
 
       - name: تخزين مؤقت لـ Gradle
         uses: actions/cache@v4
