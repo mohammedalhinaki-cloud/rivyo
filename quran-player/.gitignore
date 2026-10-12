@@ -1,0 +1,20 @@
+# الاعتماديات والمخرجات المولَّدة
+node_modules/
+dist/
+*.tsbuildinfo
+
+# مخرجات أندرويد (تُبنى في CI)
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/androidTest/
+android/app/src/test/
+
+# ملفات مؤقتة
+*.log
+.DS_Store

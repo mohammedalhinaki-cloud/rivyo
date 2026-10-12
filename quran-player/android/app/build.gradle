@@ -1,0 +1,73 @@
+apply plugin: 'com.android.application'
+
+// ⚠️ ملاحظة أمنية: مفتاح التوقيع المرفق (keystore/quran-release.p12) وكلمة سرّه مقصودان
+// أن يكونا داخل المستودع حتى يستطيع GitHub Actions بناء نسخة APK موقّعة قابلة للتثبيت مباشرة.
+// إن أردت النشر على متجر Google Play: انشئ مفتاحًا خاصًا بك سرًّا (لا ترفعه للمستودع)،
+// وتذكّر أن تغيير مفتاح التوقيع يمنع تحديث التطبيق فوق نسخة قديمة.
+def releaseStoreFile = file("../keystore/quran-release.p12")
+def releaseStorePassword = System.getenv("QURAN_KEYSTORE_PASSWORD") ?: "QuranPlayer2026!"
+def releaseKeyAlias = System.getenv("QURAN_KEY_ALIAS") ?: "quran"
+
+android {
+    namespace = "com.rivyo.quran"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.rivyo.quran"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode((System.getenv("APP_VERSION_CODE") ?: "1").toInteger())
+        versionName(System.getenv("APP_VERSION_NAME") ?: "1.0.0")
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            storeFile releaseStoreFile
+            storeType "PKCS12"
+            storePassword releaseStorePassword
+            keyAlias releaseKeyAlias
+            keyPassword releaseStorePassword
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
